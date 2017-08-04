@@ -1,0 +1,4 @@
+Dumbster - a dummy SMTP server
+Copyright 2004 Jason Paul Kitchen
+
+Licensed under the Apache License Version 2.0
