@@ -44,12 +44,12 @@ public abstract class AbstractSmtpServerTest
     private SmtpServer server;
     private int smtpPort;
 
-    private final String SERVER = "localhost";
-    private final String FROM = "sender@here.com";
-    private final String TO = "receiver@there.com";
-    private final String SUBJECT = "Test";
-    private final String BODY = "Test Body";
-    private final String FileName = "license.txt";
+    private static final String SERVER = "localhost";
+    private static final String FROM = "sender@here.com";
+    private static final String TO = "receiver@there.com";
+    private static final String SUBJECT = "Test";
+    private static final String BODY = "Test Body";
+    private static final String FILENAME = "LICENSE.txt";
 
     private final int WAIT_TICKS = 10000;
 
@@ -196,9 +196,9 @@ public abstract class AbstractSmtpServerTest
     private MimeBodyPart buildFileAttachment() throws MessagingException
     {
         MimeBodyPart messageBodyPart = new MimeBodyPart();
-        DataSource source = new javax.activation.FileDataSource(FileName);
+        DataSource source = new javax.activation.FileDataSource(FILENAME);
         messageBodyPart.setDataHandler(new DataHandler(source));
-        messageBodyPart.setFileName(FileName);
+        messageBodyPart.setFileName(FILENAME);
         return messageBodyPart;
     }
 
