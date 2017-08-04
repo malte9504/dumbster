@@ -13,21 +13,30 @@
  */
 package com.dumbster.smtp.mailstores;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dumbster.smtp.MailMessage;
 import com.dumbster.smtp.MailStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Deque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class RollingMailStore implements MailStore
 {
+    private final Logger LOG = LoggerFactory.getLogger(RollingMailStore.class);
 
-    private List<MailMessage> receivedMail;
+    private Deque<MailMessage> receivedMail;
 
     public RollingMailStore()
     {
-        receivedMail = Collections.synchronizedList(new ArrayList<MailMessage>());
+        this(100);
+    }
+
+    public RollingMailStore(int size)
+    {
+        receivedMail = new LinkedBlockingDeque<MailMessage>(size);
     }
 
     @Override
@@ -39,10 +48,15 @@ public class RollingMailStore implements MailStore
     @Override
     public void addMessage(MailMessage message)
     {
-        System.out.println("\n\nReceived message:\n" + message);
-        receivedMail.add(message);
-        if (getEmailCount() > 100) {
-            receivedMail.remove(0);
+        requireNonNull(message, "message is null");
+
+        LOG.debug("Received message: " + message);
+
+        synchronized(receivedMail) {
+            if (!receivedMail.offer(message)) {
+                receivedMail.remove();
+                receivedMail.add(message);
+            }
         }
     }
 
@@ -55,7 +69,7 @@ public class RollingMailStore implements MailStore
     @Override
     public MailMessage getMessage(int index)
     {
-        return receivedMail.get(index);
+        return getMessages()[index];
     }
 
     @Override

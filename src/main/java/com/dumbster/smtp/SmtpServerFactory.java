@@ -13,6 +13,11 @@
  */
 package com.dumbster.smtp;
 
+import static java.lang.String.format;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * User: rj
  * Date: Aug 28, 2011
@@ -20,6 +25,8 @@ package com.dumbster.smtp;
  */
 public class SmtpServerFactory
 {
+    private static final Logger LOG = LoggerFactory.getLogger(SmtpServerFactory.class);
+
     public static SmtpServer startServer()
     {
         ServerOptions serverOptions = new ServerOptions();
@@ -31,7 +38,7 @@ public class SmtpServerFactory
         SmtpServer server = wireUpServer(options);
         wrapInShutdownHook(server);
         startServerThread(server);
-        System.out.println("Dumbster SMTP Server started on port " + options.port + ".\n");
+        LOG.info(format("Dumbster SMTP Server started on port '%d'.", options.port));
         return server;
     }
 
@@ -51,8 +58,8 @@ public class SmtpServerFactory
             public void run()
             {
                 server.stop();
-                System.out.println("\nDumbster SMTP Server stopped");
-                System.out.println("\tTotal messages received: " + server.getEmailCount());
+                LOG.info("Dumbster SMTP Server stopped.");
+                LOG.info(format("\t%d messages received.", server.getEmailCount()));
             }
         });
     }
@@ -66,10 +73,11 @@ public class SmtpServerFactory
                 Thread.sleep(1);
                 timeout--;
                 if (timeout < 1) {
-                    throw new RuntimeException("Server could not be started.");
+                    throw new IllegalStateException("Server could not be started.");
                 }
             }
-            catch (InterruptedException ignored) {
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

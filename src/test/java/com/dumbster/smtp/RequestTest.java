@@ -39,6 +39,8 @@ import com.dumbster.smtp.mailstores.RollingMailStore;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+
 public class RequestTest
 {
 
@@ -169,7 +171,7 @@ public class RequestTest
     }
 
     @Test
-    public void testListWithMailListed()
+    public void testListWithMailListed() throws IOException
     {
         message.appendBody("Hello, world!");
         mailStore.addMessage(message);

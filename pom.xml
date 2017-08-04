@@ -32,6 +32,10 @@
 
     <url>https://github.com/hgschmie/dumbster</url>
 
+    <properties>
+        <dep.slf4j.version>1.7.21</dep.slf4j.version>
+    </properties>
+
     <scm>
         <url>https://github.com/hgschmie/dumbster</url>
         <connection>scm:git:git://github.com/hgschmie/dumbster.git</connection>
@@ -47,6 +51,18 @@
     </licenses>
 
     <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${dep.slf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${dep.slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

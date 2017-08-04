@@ -13,19 +13,26 @@
  */
 package com.dumbster.smtp.mailstores;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
 import com.dumbster.smtp.MailMessage;
 import com.dumbster.smtp.MailStore;
 import com.dumbster.smtp.eml.EMLMailMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,8 +44,9 @@ import java.util.regex.Pattern;
  */
 public class EMLMailStore implements MailStore
 {
+    private final Logger LOG = LoggerFactory.getLogger(EMLMailStore.class);
 
-    private boolean initialized;
+    private AtomicBoolean initialized = new AtomicBoolean();
     private int count = 0;
     private File directory = new File("eml_store");
     private List<MailMessage> messages = new ArrayList<MailMessage>();
@@ -48,16 +56,18 @@ public class EMLMailStore implements MailStore
      */
     private void checkInitialized()
     {
-        if (!initialized) {
-            if (!directory.exists()) {
-                if (!directory.mkdirs()) {
-                    throw new IllegalStateException("Could not create '" + directory.getAbsolutePath() + "'");
+        synchronized(this) {
+            if (!initialized.getAndSet(true)) {
+                if (!directory.exists()) {
+                    LOG.debug(format("Creating directory '%s'", directory.getAbsolutePath()));
+                    if (!directory.mkdirs()) {
+                        throw new UncheckedIOException(new IOException(format("Could not create '%s'", directory.getAbsolutePath())));
+                    }
+                }
+                else {
+                    loadMessages();
                 }
             }
-            else {
-                loadMessages();
-            }
-            initialized = true;
         }
     }
 
@@ -84,7 +94,7 @@ public class EMLMailStore implements MailStore
     {
         File[] files = this.directory.listFiles(new EMLFilenameFilter());
         if (files == null) {
-            System.err.println("Unable to load messages from eml mailStore directory: " + directory);
+            LOG.error(format("Unable to load messages from eml mailStore directory '%s'", directory));
             return new File[0];
         }
         return files;
@@ -97,7 +107,9 @@ public class EMLMailStore implements MailStore
     public int getEmailCount()
     {
         checkInitialized();
-        return count;
+        synchronized(this) {
+            return count;
+        }
     }
 
     /**
@@ -106,47 +118,50 @@ public class EMLMailStore implements MailStore
     @Override
     public void addMessage(MailMessage message)
     {
+        requireNonNull(message, "message is null");
+
         checkInitialized();
-        count++;
-        messages.add(message);
 
-        System.out.println("Received message: " + count);
-
-        try {
-            if (!directory.exists()) {
-                System.out.println("Directory created: " + directory);
-                if (!directory.mkdirs()) {
-                    throw new IllegalStateException("Could not create '" + directory.getAbsolutePath() + "'");
-                }
-            }
+        File file;
+        synchronized(this) {
+            count++;
             String filename = getFilename(message, count);
-            File file = new File(directory, filename);
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.ISO_8859_1)) {
+            file = new File(directory, filename);
+            messages.add(message);
+        }
 
-                for (Iterator<String> i = message.getHeaderNames(); i.hasNext();) {
-                    String name = i.next();
-                    String[] values = message.getHeaderValues(name);
-                    for (String value : values) {
-                        writer.append(name);
-                        writer.append(": ");
-                        writer.append(value);
-                        writer.append('\n');
-                    }
+        LOG.debug("Received message: " + message);
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+                OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.ISO_8859_1)) {
+
+            for (Iterator<String> i = message.getHeaderNames(); i.hasNext();) {
+                String name = i.next();
+                String[] values = message.getHeaderValues(name);
+                for (String value : values) {
+                    writer.append(name);
+                    writer.append(": ");
+                    writer.append(value);
+                    writer.append('\n');
                 }
-                writer.append('\n');
-                writer.append(message.getBody());
-                writer.append('\n');
             }
+            writer.append('\n');
+            writer.append(message.getBody());
+            writer.append('\n');
         }
         catch (IOException e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
     }
 
     public String getFilename(MailMessage message, int count)
     {
+        requireNonNull(message, "message is null");
+
+        if (count < 0) {
+            throw new IllegalArgumentException("count must be >= 0");
+        }
+
         String filename = new StringBuilder().append(count)
             .append("_")
             .append(message.getFirstHeaderValue("Subject"))
@@ -166,7 +181,9 @@ public class EMLMailStore implements MailStore
     {
         checkInitialized();
 
-        return messages.toArray(new MailMessage[0]);
+        synchronized (this) {
+            return messages.toArray(new MailMessage[messages.size()]);
+        }
     }
 
     /**
@@ -184,28 +201,33 @@ public class EMLMailStore implements MailStore
     @Override
     public void clearMessages()
     {
-        File [] files = this.directory.listFiles(new EMLFilenameFilter());
-        if (files != null) {
-            for (File file : files) {
-                if (file.delete()) {
-                    count--;
+        synchronized(this) {
+            File [] files = this.directory.listFiles(new EMLFilenameFilter());
+            if (files != null) {
+                for (File file : files) {
+                    if (!file.delete()) {
+                        LOG.warn(format("Could not delete '%s'", file.getAbsolutePath()));
+                    }
                 }
             }
-        }
-        else {
+
             count = 0;
+            messages.clear();
         }
-        messages.clear();
     }
 
     public void setDirectory(String directory)
     {
+        requireNonNull(directory, "directory is null");
         setDirectory(new File(directory));
     }
 
     public void setDirectory(File directory)
     {
-        this.directory = directory;
+        requireNonNull(directory, "directory is null");
+        synchronized(this) {
+            this.directory = directory;
+        }
     }
 
     /**
