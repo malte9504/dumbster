@@ -72,9 +72,9 @@ public class EMLMailMessageTest
     public void testGetHeaderNames()
     {
         List<String> headers = new ArrayList<String>();
-        Iterator iterator = message.getHeaderNames();
+        Iterator<String> iterator = message.getHeaderNames();
         while (iterator.hasNext()) {
-            headers.add((String) iterator.next());
+            headers.add(iterator.next());
         }
         assertEquals(5, headers.size());
     }

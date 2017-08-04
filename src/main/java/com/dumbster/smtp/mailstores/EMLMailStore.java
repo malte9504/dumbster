@@ -18,8 +18,11 @@ import com.dumbster.smtp.MailStore;
 import com.dumbster.smtp.eml.EMLMailMessage;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +50,9 @@ public class EMLMailStore implements MailStore
     {
         if (!initialized) {
             if (!directory.exists()) {
-                directory.mkdirs();
+                if (!directory.mkdirs()) {
+                    throw new IllegalStateException("Could not create '" + directory.getAbsolutePath() + "'");
+                }
             }
             else {
                 loadMessages();
@@ -110,30 +115,31 @@ public class EMLMailStore implements MailStore
         try {
             if (!directory.exists()) {
                 System.out.println("Directory created: " + directory);
-                directory.mkdirs();
+                if (!directory.mkdirs()) {
+                    throw new IllegalStateException("Could not create '" + directory.getAbsolutePath() + "'");
+                }
             }
             String filename = getFilename(message, count);
             File file = new File(directory, filename);
-            FileWriter writer = new FileWriter(file);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+                    OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream, StandardCharsets.ISO_8859_1)) {
 
-            for (Iterator<String> i = message.getHeaderNames(); i.hasNext();) {
-                String name = i.next();
-                String[] values = message.getHeaderValues(name);
-                for (String value : values) {
-                    writer.append(name);
-                    writer.append(": ");
-                    writer.append(value);
-                    writer.append('\n');
+                for (Iterator<String> i = message.getHeaderNames(); i.hasNext();) {
+                    String name = i.next();
+                    String[] values = message.getHeaderValues(name);
+                    for (String value : values) {
+                        writer.append(name);
+                        writer.append(": ");
+                        writer.append(value);
+                        writer.append('\n');
+                    }
                 }
+                writer.append('\n');
+                writer.append(message.getBody());
+                writer.append('\n');
             }
-            writer.append('\n');
-            writer.append(message.getBody());
-            writer.append('\n');
-
-            writer.close();
-
         }
-        catch (Exception e) {
+        catch (IOException e) {
             System.err.println(e.getMessage());
             e.printStackTrace();
         }
@@ -178,9 +184,16 @@ public class EMLMailStore implements MailStore
     @Override
     public void clearMessages()
     {
-        for (File file : this.directory.listFiles(new EMLFilenameFilter())) {
-            file.delete();
-            count--;
+        File [] files = this.directory.listFiles(new EMLFilenameFilter());
+        if (files != null) {
+            for (File file : files) {
+                if (file.delete()) {
+                    count--;
+                }
+            }
+        }
+        else {
+            count = 0;
         }
         messages.clear();
     }

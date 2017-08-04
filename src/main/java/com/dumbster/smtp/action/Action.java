@@ -20,10 +20,8 @@ import com.dumbster.smtp.SmtpState;
 
 public interface Action
 {
-
     @Override
-    public abstract String toString();
+    String toString();
 
-    public abstract Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage);
-
+    Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage);
 }

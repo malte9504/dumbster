@@ -19,11 +19,9 @@ import java.io.PrintWriter;
 
 public interface IOSource
 {
+    BufferedReader getInputStream() throws IOException;
 
-    public BufferedReader getInputStream() throws IOException;
+    PrintWriter getOutputStream() throws IOException;
 
-    public PrintWriter getOutputStream() throws IOException;
-
-    public void close() throws IOException;
-
+    void close() throws IOException;
 }

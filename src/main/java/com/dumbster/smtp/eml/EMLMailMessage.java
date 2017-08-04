@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -135,7 +137,7 @@ public class EMLMailMessage implements MailMessage
 
     private void loadFile()
     {
-        Scanner scanner = new Scanner(stream);
+        Scanner scanner = new Scanner(new InputStreamReader(stream, StandardCharsets.ISO_8859_1));
         SmtpState state = SmtpState.DATA_HDR;
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();

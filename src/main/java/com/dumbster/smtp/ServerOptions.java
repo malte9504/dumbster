@@ -46,7 +46,7 @@ public class ServerOptions
                 try {
                     this.mailStore = (MailStore) Class.forName("com.dumbster.smtp.mailstores." + values[1]).newInstance();
                 }
-                catch (Exception e) {
+                catch (ReflectiveOperationException e) {
                     this.valid = false;
                     return;
                 }

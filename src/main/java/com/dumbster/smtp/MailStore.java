@@ -15,13 +15,13 @@ package com.dumbster.smtp;
 
 public interface MailStore
 {
-    public int getEmailCount();
+    int getEmailCount();
 
-    public void addMessage(MailMessage message);
+    void addMessage(MailMessage message);
 
-    public MailMessage[] getMessages();
+    MailMessage[] getMessages();
 
-    public MailMessage getMessage(int index);
+    MailMessage getMessage(int index);
 
-    public void clearMessages();
+    void clearMessages();
 }

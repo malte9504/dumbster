@@ -119,11 +119,9 @@ public class MailMessageImpl implements MailMessage
     public String toString()
     {
         StringBuffer msg = new StringBuffer();
-        for (Iterator<String> i = headers.keySet().iterator(); i.hasNext();) {
-            String name = i.next();
-            List<String> values = headers.get(name);
-            for (Iterator<String> j = values.iterator(); j.hasNext();) {
-                String value = j.next();
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            String name = entry.getKey();
+            for (String value : entry.getValue()) {
                 msg.append(name);
                 msg.append(": ");
                 msg.append(value);
