@@ -44,10 +44,7 @@ public class SmtpServerFactory
 
     private static SmtpServer wireUpServer(ServerOptions options)
     {
-        SmtpServer server = new SmtpServer();
-        server.setPort(options.port);
-        server.setThreaded(options.threaded);
-        server.setMailStore(options.mailStore);
+        SmtpServer server = new SmtpServer(options);
         return server;
     }
 
@@ -57,7 +54,13 @@ public class SmtpServerFactory
             @Override
             public void run()
             {
-                server.stop();
+                try {
+                    server.stop();
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
                 LOG.info("Dumbster SMTP Server stopped.");
                 LOG.info(format("\t%d messages received.", server.getEmailCount()));
             }
@@ -68,7 +71,7 @@ public class SmtpServerFactory
     {
         new Thread(server).start();
         int timeout = 1000;
-        while (!server.isReady()) {
+        while (!server.isRunning()) {
             try {
                 Thread.sleep(1);
                 timeout--;

@@ -15,17 +15,13 @@ package com.dumbster.smtp;
 
 import com.dumbster.smtp.mailstores.RollingMailStore;
 
-/**
- * User: rj
- * Date: 7/18/13
- * Time: 5:35 AM
- */
 public class ServerOptions
 {
     public int port = SmtpServer.DEFAULT_SMTP_PORT;
     public boolean threaded = true;
     public MailStore mailStore = new RollingMailStore();
     public boolean valid = true;
+    public int waitInResponse = 0;
 
     public ServerOptions()
     {}

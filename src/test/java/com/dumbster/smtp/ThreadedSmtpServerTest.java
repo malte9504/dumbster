@@ -13,7 +13,7 @@
  */
 package com.dumbster.smtp;
 
-public class SmtpServerTest extends AbstractSmtpServerTest
+public class ThreadedSmtpServerTest extends AbstractSmtpServerTest
 {
     private static final int SMTP_PORT = 1081;
 
@@ -22,6 +22,8 @@ public class SmtpServerTest extends AbstractSmtpServerTest
     {
         ServerOptions options = new ServerOptions();
         options.port = SMTP_PORT;
+        options.threaded = true;
         return SmtpServerFactory.startServer(options);
     }
+
 }

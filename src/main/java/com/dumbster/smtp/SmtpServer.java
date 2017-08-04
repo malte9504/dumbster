@@ -16,9 +16,15 @@
  */
 package com.dumbster.smtp;
 
+import static java.util.Objects.requireNonNull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,86 +33,84 @@ import java.util.concurrent.Executors;
  */
 public class SmtpServer implements Runnable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(SmtpServer.class);
+
     public static final int DEFAULT_SMTP_PORT = 25;
-    private static final int SERVER_SOCKET_TIMEOUT = 0;
+    // Timeout for socket accept. Do *not* set to 0 (call will block forever)
+    private static final int SERVER_SOCKET_TIMEOUT = 10;
     private static final int MAX_THREADS = 10;
 
-    private volatile MailStore mailStore;
-    private volatile boolean stopped = true;
-    private volatile boolean ready = false;
-    private volatile boolean threaded = false;
+    // True if the server is accepting connections.
+    private volatile boolean running = false;
 
-    private ServerSocket serverSocket;
-    private int port;
+    // True if the server is not active.
+    private volatile boolean stopped = true;
+
+    private volatile Thread serverThread = null;
+
+    private final int port;
+    private final MailStore mailStore;
+    private final boolean threaded;
+    private final int waitInResponse;
+
+
+    public SmtpServer(final ServerOptions serverOptions) {
+        requireNonNull(serverOptions, "serverOptions is null");
+        this.port = serverOptions.port;
+        this.mailStore = serverOptions.mailStore;
+        this.threaded = serverOptions.threaded;
+        this.waitInResponse = serverOptions.waitInResponse;
+    }
 
     @Override
     public void run()
     {
-        stopped = false;
-        try {
-            initializeServerSocket();
-            serverLoop();
+        serverThread = Thread.currentThread();
+        try(ServerSocket serverSocket = new ServerSocket(port)) {
+            serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
+            serverLoop(serverSocket);
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            ready = false;
-            if (serverSocket != null) {
-                try {
-                    serverSocket.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        catch (IOException e) {
+            LOG.warn("Server Loop terminated: ", e);
         }
     }
 
-    private void initializeServerSocket() throws Exception
-    {
-        serverSocket = new ServerSocket(port);
-        serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
-    }
-
-    private void serverLoop() throws IOException
+    private void serverLoop(ServerSocket serverSocket) throws IOException
     {
         int poolSize = threaded ? MAX_THREADS : 1;
         ExecutorService threadExecutor = Executors.newFixedThreadPool(poolSize);
-        while (!isStopped()) {
-            Socket clientSocket;
+
+        this.running = true;
+        this.stopped = false;
+
+        while (isRunning()) {
             try {
-                clientSocket = clientSocket();
-            }
-            catch (IOException ex) {
-                if (isStopped()) {
-                    break;
+                Socket clientSocket = serverSocket.accept();
+                SocketWrapper source = new SocketWrapper(clientSocket);
+                ClientSession session;
+
+                if (waitInResponse == 0) {
+                    session = new ClientSession(source, mailStore);
                 }
                 else {
-                    throw ex;
+                    session = new TimedClientSession(source, mailStore, waitInResponse);
+                }
+
+                threadExecutor.execute(session);
+            }
+            catch (SocketTimeoutException e) {
+                LOG.trace("Tick ...");
+            }
+            catch (IOException e) {
+                // Don't bother logging if we shut down, it is probably a
+                // socket closed exception
+                if (isRunning()) {
+                    LOG.warn("In accept loop: ", e);
                 }
             }
-            SocketWrapper source = new SocketWrapper(clientSocket);
-            ClientSession session = new ClientSession(source, mailStore);
-            threadExecutor.execute(session);
         }
         threadExecutor.shutdown();
-        ready = false;
-    }
-
-    private Socket clientSocket() throws IOException
-    {
-        Socket socket = null;
-        while (socket == null) {
-            socket = accept();
-        }
-        return socket;
-    }
-
-    private Socket accept() throws IOException
-    {
-        ready = true;
-        return serverSocket.accept();
+        stopped = true;
     }
 
     public boolean isStopped()
@@ -114,28 +118,20 @@ public class SmtpServer implements Runnable
         return stopped;
     }
 
-    public synchronized void stop()
+    public boolean isRunning()
     {
-        stopped = true;
-        try {
-            serverSocket.close();
-        }
-        catch (IOException e) {
-            throw new SmtpServerException(e);
-        }
+        return running;
     }
 
-    public static class SmtpServerException extends RuntimeException
+    public synchronized void stop() throws InterruptedException
     {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-
-        public SmtpServerException(Throwable cause)
-        {
-            super(cause);
+        // exit the accept loop.
+        running = false;
+        if (serverThread != null) {
+            serverThread.interrupt();
         }
+
+        serverThread.join();
     }
 
     public MailMessage[] getMessages()
@@ -162,39 +158,19 @@ public class SmtpServer implements Runnable
                 Thread.sleep(1);
             }
             catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return;
             }
         }
     }
 
-    public boolean isReady()
-    {
-        return ready;
-    }
-
-    /**
-     * Toggles if the SMTP server is single or multi-threaded for response to
-     * SMTP sessions.
-     *
-     * @param threaded
-     */
-    public void setThreaded(boolean threaded)
-    {
-        this.threaded = threaded;
-    }
-
-    public void setMailStore(MailStore mailStore)
-    {
-        this.mailStore = mailStore;
-    }
-
-    public void setPort(int port)
-    {
-        this.port = port;
-    }
-
     public void clearMessages()
     {
         this.mailStore.clearMessages();
+    }
+
+    public int getPort()
+    {
+        return port;
     }
 }

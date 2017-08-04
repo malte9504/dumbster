@@ -13,12 +13,16 @@
  */
 package com.dumbster.smtp;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
 public class ClientSession implements Runnable
 {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientSession.class);
 
     private IOSource socket;
     private volatile MailStore mailStore;
@@ -29,9 +33,10 @@ public class ClientSession implements Runnable
     private SmtpState smtpState;
     private String line;
     private String lastHeaderName = null;
+    private volatile boolean running = true;
 
 
-    public ClientSession(IOSource socket, MailStore mailStore)
+    protected ClientSession(IOSource socket, MailStore mailStore)
     {
         this.socket = socket;
         this.mailStore = mailStore;
@@ -43,27 +48,45 @@ public class ClientSession implements Runnable
     @Override
     public void run()
     {
-        try {
+        do {
+            try {
             prepareSessionLoop();
             sessionLoop();
-        }
-        catch (Exception ignored) {
-        }
-        finally {
-            try {
-                socket.close();
             }
-            catch (Exception ignored) {
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                running = false;
             }
+            catch (IOException e) {
+                LOG.warn("Caught IO Exception", e);
+            }
+        } while(running);
+
+        try {
+            socket.close();
+        }
+        catch (Exception e) {
+            LOG.debug("While closing socket", e);
         }
     }
 
-    private void prepareSessionLoop() throws IOException
+    public void stop()
+    {
+        this.running = false;
+    }
+
+    protected void doWaitInResponse() throws InterruptedException
+    {
+        // GNDN
+    }
+
+    protected boolean prepareSessionLoop() throws IOException, InterruptedException
     {
         prepareOutput();
         prepareInput();
         sendResponse();
         updateSmtpState();
+        return true;
     }
 
     private void prepareOutput() throws IOException
@@ -77,9 +100,10 @@ public class ClientSession implements Runnable
         input = socket.getInputStream();
     }
 
-    private void sendResponse()
+    private void sendResponse() throws InterruptedException
     {
         if (smtpResponse.getCode() > 0) {
+            doWaitInResponse();
             int code = smtpResponse.getCode();
             String message = smtpResponse.getMessage();
             out.print(code + " " + message + "\r\n");
@@ -92,7 +116,7 @@ public class ClientSession implements Runnable
         smtpState = smtpResponse.getNextState();
     }
 
-    private void sessionLoop() throws IOException
+    protected void sessionLoop() throws IOException, InterruptedException
     {
         while (smtpState != SmtpState.CONNECT && readNextLineReady()) {
             Request request = Request.createRequest(smtpState, line);
