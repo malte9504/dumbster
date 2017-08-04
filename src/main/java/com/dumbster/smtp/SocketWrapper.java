@@ -6,24 +6,32 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class SocketWrapper implements IOSource {
+public class SocketWrapper implements IOSource
+{
     private Socket socket;
 
-    public SocketWrapper(Socket socket) throws IOException {
+    public SocketWrapper(Socket socket) throws IOException
+    {
         this.socket = socket;
         this.socket.setSoTimeout(10000); // protects against hanged clients
     }
 
-    public BufferedReader getInputStream() throws IOException {
+    @Override
+    public BufferedReader getInputStream() throws IOException
+    {
         return new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
+            new InputStreamReader(socket.getInputStream()));
     }
 
-    public PrintWriter getOutputStream() throws IOException {
+    @Override
+    public PrintWriter getOutputStream() throws IOException
+    {
         return new PrintWriter(socket.getOutputStream());
     }
 
-    public void close() throws IOException {
+    @Override
+    public void close() throws IOException
+    {
         socket.close();
     }
 

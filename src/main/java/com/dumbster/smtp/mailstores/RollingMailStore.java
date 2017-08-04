@@ -7,19 +7,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class RollingMailStore implements MailStore {
+public class RollingMailStore implements MailStore
+{
 
     private List<MailMessage> receivedMail;
 
-    public RollingMailStore() {
+    public RollingMailStore()
+    {
         receivedMail = Collections.synchronizedList(new ArrayList<MailMessage>());
     }
 
-    public int getEmailCount() {
+    @Override
+    public int getEmailCount()
+    {
         return receivedMail.size();
     }
 
-    public void addMessage(MailMessage message) {
+    @Override
+    public void addMessage(MailMessage message)
+    {
         System.out.println("\n\nReceived message:\n" + message);
         receivedMail.add(message);
         if (getEmailCount() > 100) {
@@ -27,16 +33,21 @@ public class RollingMailStore implements MailStore {
         }
     }
 
-    public MailMessage[] getMessages() {
+    @Override
+    public MailMessage[] getMessages()
+    {
         return receivedMail.toArray(new MailMessage[receivedMail.size()]);
     }
 
-    public MailMessage getMessage(int index) {
+    @Override
+    public MailMessage getMessage(int index)
+    {
         return receivedMail.get(index);
     }
 
     @Override
-    public void clearMessages() {
+    public void clearMessages()
+    {
         this.receivedMail.clear();
     }
 }

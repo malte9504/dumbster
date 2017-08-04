@@ -1,7 +1,7 @@
 /*
  * Dumbster - a dummy SMTP server
  * Copyright 2004 Jason Paul Kitchen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,20 +16,32 @@
  */
 package com.dumbster.smtp;
 
-import org.junit.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import com.dumbster.smtp.SmtpServer;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.util.Date;
+import java.util.Properties;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
-import javax.mail.*;
-import javax.mail.internet.*;
-import java.util.Properties;
-import java.util.Date;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
-public class SmtpServerTest {
+public class SmtpServerTest
+{
     private static final int SMTP_PORT = 1081;
 
     private SmtpServer server;
@@ -44,25 +56,29 @@ public class SmtpServerTest {
     private final int WAIT_TICKS = 10000;
 
     @Before
-    public void setup() {
+    public void setup()
+    {
         ServerOptions options = new ServerOptions();
         options.port = SMTP_PORT;
         server = SmtpServerFactory.startServer(options);
     }
 
     @After
-    public void teardown() {
+    public void teardown()
+    {
         server.stop();
     }
 
     @Test
-    public void testNoMessageSentButWaitingDoesNotHang() {
+    public void testNoMessageSentButWaitingDoesNotHang()
+    {
         server.anticipateMessageCountFor(1, 10);
         assertEquals(0, server.getEmailCount());
     }
 
     @Test
-    public void testSend() {
+    public void testSend()
+    {
         sendMessage(SMTP_PORT, FROM, SUBJECT, BODY, TO);
         server.anticipateMessageCountFor(1, WAIT_TICKS);
         assertTrue(server.getEmailCount() == 1);
@@ -72,7 +88,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testClearMessages() {
+    public void testClearMessages()
+    {
         sendMessage(SMTP_PORT, FROM, SUBJECT, BODY, TO);
         server.anticipateMessageCountFor(1, WAIT_TICKS);
         assertTrue(server.getEmailCount() == 1);
@@ -84,7 +101,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testSendWithLongSubject() {
+    public void testSendWithLongSubject()
+    {
         String longSubject = StringUtil.longString(500);
         sendMessage(SMTP_PORT, FROM, longSubject, BODY, TO);
         server.anticipateMessageCountFor(1, WAIT_TICKS);
@@ -96,13 +114,15 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testSendWithFoldedSubject() {
+    public void testSendWithFoldedSubject()
+    {
         String subject = "This\r\n is a folded\r\n Subject line.";
         MailMessage email = sendMessageWithSubject(subject);
         assertEquals("This is a folded Subject line.", email.getFirstHeaderValue("Subject"));
     }
 
-    private MailMessage sendMessageWithSubject(String subject) {
+    private MailMessage sendMessageWithSubject(String subject)
+    {
         sendMessage(SMTP_PORT, FROM, subject, BODY, TO);
         server.anticipateMessageCountFor(1, WAIT_TICKS);
         assertEquals(1, server.getEmailCount());
@@ -110,7 +130,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testSendWithFoldedSubjectLooksLikeHeader() {
+    public void testSendWithFoldedSubjectLooksLikeHeader()
+    {
         String subject = "This\r\n really: looks\r\n strange.";
         MailMessage email = sendMessageWithSubject(subject);
         assertEquals("This really: looks strange.", email.getFirstHeaderValue("Subject"));
@@ -119,7 +140,8 @@ public class SmtpServerTest {
     @Test
     @Ignore
     // should this work?
-    public void testSendMessageWithCarriageReturn() {
+    public void testSendMessageWithCarriageReturn()
+    {
         String bodyWithCR = "\r\nKeep these pesky carriage returns\r\n";
         sendMessage(SMTP_PORT, FROM, SUBJECT, bodyWithCR, TO);
         assertEquals(1, server.getEmailCount());
@@ -128,7 +150,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testThreadedSend() {
+    public void testThreadedSend()
+    {
         server.setThreaded(true);
         sendMessage(SMTP_PORT, FROM, SUBJECT, BODY, TO);
         server.anticipateMessageCountFor(1, WAIT_TICKS);
@@ -139,7 +162,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testSendTwoMessagesSameConnection() {
+    public void testSendTwoMessagesSameConnection()
+    {
         try {
             MimeMessage[] mimeMessages = new MimeMessage[2];
             Properties mailProps = getMailProperties(SMTP_PORT);
@@ -156,7 +180,8 @@ public class SmtpServerTest {
             }
 
             transport.close();
-        } catch (MessagingException e) {
+        }
+        catch (MessagingException e) {
             e.printStackTrace();
             fail("Unexpected exception: " + e);
         }
@@ -165,7 +190,8 @@ public class SmtpServerTest {
     }
 
     @Test
-    public void testSendingFileAttachment() throws MessagingException {
+    public void testSendingFileAttachment() throws MessagingException
+    {
         Properties props = getMailProperties(SMTP_PORT);
         props.put("mail.smtp.host", "localhost");
         Session session = Session.getDefaultInstance(props, null);
@@ -184,7 +210,8 @@ public class SmtpServerTest {
         assertTrue(server.getMessage(0).getBody().indexOf("Apache License") > 0);
     }
 
-    private MimeBodyPart buildFileAttachment() throws MessagingException {
+    private MimeBodyPart buildFileAttachment() throws MessagingException
+    {
         MimeBodyPart messageBodyPart = new MimeBodyPart();
         DataSource source = new javax.activation.FileDataSource(FileName);
         messageBodyPart.setDataHandler(new DataHandler(source));
@@ -192,14 +219,16 @@ public class SmtpServerTest {
         return messageBodyPart;
     }
 
-    private MimeBodyPart buildMessageBody() throws MessagingException {
+    private MimeBodyPart buildMessageBody() throws MessagingException
+    {
         MimeBodyPart messageBodyPart = new MimeBodyPart();
         messageBodyPart.setText(BODY);
         return messageBodyPart;
     }
 
     @Test
-    public void testSendTwoMsgsWithLogin() {
+    public void testSendTwoMsgsWithLogin()
+    {
         try {
 
             Properties props = System.getProperties();
@@ -225,16 +254,20 @@ public class SmtpServerTest {
                 transport.connect(SERVER, SMTP_PORT, "ddd", "ddd");
                 transport.sendMessage(msg, InternetAddress.parse(TO, false));
                 transport.sendMessage(msg, InternetAddress.parse("dimiter.bakardjiev@musala.com", false));
-            } catch (javax.mail.MessagingException me) {
+            }
+            catch (javax.mail.MessagingException me) {
                 me.printStackTrace();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
-            } finally {
+            }
+            finally {
                 if (transport != null) {
                     transport.close();
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         server.anticipateMessageCountFor(2, WAIT_TICKS);
@@ -244,7 +277,8 @@ public class SmtpServerTest {
         assertEquals("Test Body", email.getBody());
     }
 
-    private Properties getMailProperties(int port) {
+    private Properties getMailProperties(int port)
+    {
         Properties mailProps = new Properties();
         mailProps.setProperty("mail.smtp.host", "localhost");
         mailProps.setProperty("mail.smtp.port", "" + port);
@@ -252,20 +286,23 @@ public class SmtpServerTest {
         return mailProps;
     }
 
-    private void sendMessage(int port, String from, String subject, String body, String to) {
+    private void sendMessage(int port, String from, String subject, String body, String to)
+    {
         try {
             Properties mailProps = getMailProperties(port);
             Session session = Session.getInstance(mailProps, null);
 
             MimeMessage msg = createMessage(session, from, to, subject, body);
             Transport.send(msg);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             fail("Unexpected exception: " + e);
         }
     }
 
-    private MimeMessage createMessage(Session session, String from, String to, String subject, String body) throws MessagingException {
+    private MimeMessage createMessage(Session session, String from, String to, String subject, String body) throws MessagingException
+    {
         MimeMessage msg = new MimeMessage(session);
         msg.setFrom(new InternetAddress(from));
         msg.setSubject(subject);

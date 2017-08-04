@@ -1,5 +1,11 @@
 package com.dumbster.smtp.eml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dumbster.smtp.MailMessage;
 import com.dumbster.smtp.MailMessageImpl;
 import com.dumbster.smtp.mailstores.EMLMailStore;
@@ -12,22 +18,23 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import static org.junit.Assert.*;
-
-public class EMLMailStoreTest {
+public class EMLMailStoreTest
+{
 
     private EMLMailStore mailStore;
     private File emlStoreDir;
 
     @Before
-    public void setup() {
+    public void setup()
+    {
         mailStore = new EMLMailStore();
         emlStoreDir = new File("build/test/eml_store_test" + String.valueOf(new Random().nextInt(1000000)));
         mailStore.setDirectory(emlStoreDir);
     }
 
     @After
-    public void tearDown() {
+    public void tearDown()
+    {
         int count = 1;
         for (MailMessage message : mailStore.getMessages()) {
             String filename = mailStore.getFilename(message, count++);
@@ -40,7 +47,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testNewMailStoreHasNoMail() {
+    public void testNewMailStoreHasNoMail()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -49,7 +57,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testNewMailStoreShouldLoadMessagesFromDirectory() {
+    public void testNewMailStoreShouldLoadMessagesFromDirectory()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryHasTwoMessages();
@@ -57,14 +66,16 @@ public class EMLMailStoreTest {
         assertEquals(2, mailStore.getEmailCount());
     }
 
-    private void deleteTheTwoMessages() {
+    private void deleteTheTwoMessages()
+    {
         new File(emlStoreDir, "1_message.eml").delete();
         new File(emlStoreDir, "2_message.eml").delete();
     }
 
 
     @Test
-    public void testDirectoryShouldBeCreated() {
+    public void testDirectoryShouldBeCreated()
+    {
         givenMailStoreDirectoryDoesNotExist();
 
         whenAMessageIsAdded();
@@ -75,7 +86,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testMessageIsLoadedProperly() {
+    public void testMessageIsLoadedProperly()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -99,7 +111,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testEMLFilenameFilter() {
+    public void testEMLFilenameFilter()
+    {
         EMLFilenameFilter filter = new EMLFilenameFilter();
 
         assertTrue(filter.accept(null, "1_something.eml"));
@@ -116,7 +129,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testAddOneMessageLeavesOneMail() {
+    public void testAddOneMessageLeavesOneMail()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -127,7 +141,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testNewMailStoreHasEmptyMailList() {
+    public void testNewMailStoreHasEmptyMailList()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -136,7 +151,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testAddOneMessageLeavesOneMailInMailMessagesArray() {
+    public void testAddOneMessageLeavesOneMailInMailMessagesArray()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -147,7 +163,8 @@ public class EMLMailStoreTest {
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
-    public void testGettingMailFromEmptyMailStoreThrowsIndexOutOfBounds() {
+    public void testGettingMailFromEmptyMailStoreThrowsIndexOutOfBounds()
+    {
         givenMailStoreDirectoryExists();
 
         givenMailStoreDirectoryIsEmpty();
@@ -156,7 +173,8 @@ public class EMLMailStoreTest {
     }
 
     @Test
-    public void testGettingMail0FromMailStoreWithAnItemWorks() {
+    public void testGettingMail0FromMailStoreWithAnItemWorks()
+    {
         whenAMessageIsAdded();
         assertNotNull(mailStore.getMessage(0));
     }
@@ -165,13 +183,16 @@ public class EMLMailStoreTest {
      * BDD methods.
      */
 
-    private void givenMailStoreDirectoryIsEmpty() {
+    private void givenMailStoreDirectoryIsEmpty()
+    {
         File[] files = emlStoreDir.listFiles();
         for (File file : files) {
             file.delete();
         }
     }
-    private void givenMailStoreDirectoryDoesNotExist() {
+
+    private void givenMailStoreDirectoryDoesNotExist()
+    {
         if (emlStoreDir.exists()) {
             for (File file : emlStoreDir.listFiles()) {
                 file.delete();
@@ -179,12 +200,16 @@ public class EMLMailStoreTest {
             emlStoreDir.delete();
         }
     }
-    private void givenMailStoreDirectoryExists() {
+
+    private void givenMailStoreDirectoryExists()
+    {
         if (!emlStoreDir.exists()) {
             emlStoreDir.mkdirs();
         }
     }
-    private void givenMailStoreDirectoryHasTwoMessages() {
+
+    private void givenMailStoreDirectoryHasTwoMessages()
+    {
         givenMailStoreDirectoryIsEmpty();
         try {
 
@@ -194,22 +219,26 @@ public class EMLMailStoreTest {
             File file2 = new File(emlStoreDir, "2_message.eml");
             file2.createNewFile();
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
     }
 
-    private void whenAMessageIsAdded() {
+    private void whenAMessageIsAdded()
+    {
         MailMessage message = new MailMessageImpl();
         mailStore.addMessage(message);
     }
 
-    private void directoryShouldBeCreatedAutomatically() {
+    private void directoryShouldBeCreatedAutomatically()
+    {
         assertTrue(emlStoreDir.exists());
     }
 
-    private void messageFileShouldExist() {
+    private void messageFileShouldExist()
+    {
         assertTrue(emlStoreDir.listFiles().length == 1);
     }
 }

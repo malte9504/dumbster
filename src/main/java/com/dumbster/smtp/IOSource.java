@@ -4,7 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public interface IOSource {
+public interface IOSource
+{
 
     public BufferedReader getInputStream() throws IOException;
 

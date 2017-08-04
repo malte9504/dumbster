@@ -7,16 +7,18 @@ import com.dumbster.smtp.mailstores.RollingMailStore;
  * Date: 7/18/13
  * Time: 5:35 AM
  */
-public class ServerOptions {
+public class ServerOptions
+{
     public int port = SmtpServer.DEFAULT_SMTP_PORT;
     public boolean threaded = true;
     public MailStore mailStore = new RollingMailStore();
     public boolean valid = true;
 
-    public ServerOptions() {
-    }
+    public ServerOptions()
+    {}
 
-    public ServerOptions(String[] args) {
+    public ServerOptions(String[] args)
+    {
         if (args.length == 0) {
             return;
         }
@@ -29,17 +31,21 @@ public class ServerOptions {
                     return;
                 }
                 try {
-                    this.mailStore = (MailStore) Class.forName("com.dumbster.smtp.mailstores."+values[1]).newInstance();
-                } catch (Exception e) {
+                    this.mailStore = (MailStore) Class.forName("com.dumbster.smtp.mailstores." + values[1]).newInstance();
+                }
+                catch (Exception e) {
                     this.valid = false;
                     return;
                 }
-            } else if (argument.startsWith("--threaded")) {
+            }
+            else if (argument.startsWith("--threaded")) {
                 this.threaded = !argument.equalsIgnoreCase("--threaded=false");
-            } else {
+            }
+            else {
                 try {
                     this.port = Integer.parseInt(argument);
-                } catch (NumberFormatException e) {
+                }
+                catch (NumberFormatException e) {
                     this.valid = false;
                     break;
                 }

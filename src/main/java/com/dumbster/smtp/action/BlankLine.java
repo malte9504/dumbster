@@ -5,22 +5,29 @@ import com.dumbster.smtp.MailStore;
 import com.dumbster.smtp.Response;
 import com.dumbster.smtp.SmtpState;
 
-public class BlankLine implements Action {
+public class BlankLine implements Action
+{
 
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "Blank line";
     }
 
-    public Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage) {
+    @Override
+    public Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage)
+    {
         if (SmtpState.DATA_HDR == smtpState) {
             return new Response(-1, "", SmtpState.DATA_BODY);
-        } else if (SmtpState.DATA_BODY == smtpState) {
+        }
+        else if (SmtpState.DATA_BODY == smtpState) {
             return new Response(-1, "", smtpState);
-        } else {
+        }
+        else {
             return new Response(503,
-                    "Bad sequence of commands: " + this, smtpState);
+                "Bad sequence of commands: " + this,
+                smtpState);
         }
     }
 

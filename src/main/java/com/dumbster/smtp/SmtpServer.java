@@ -1,7 +1,7 @@
 /*
  * Dumbster - a dummy SMTP server
  * Copyright 2004 Jason Paul Kitchen
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,16 +16,17 @@
  */
 package com.dumbster.smtp;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Dummy SMTP server for testing purposes.
  */
-public class SmtpServer implements Runnable {
+public class SmtpServer implements Runnable
+{
     public static final int DEFAULT_SMTP_PORT = 25;
     private static final int SERVER_SOCKET_TIMEOUT = 0;
     private static final int MAX_THREADS = 10;
@@ -38,41 +39,50 @@ public class SmtpServer implements Runnable {
     private ServerSocket serverSocket;
     private int port;
 
-    public void run() {
+    @Override
+    public void run()
+    {
         stopped = false;
         try {
             initializeServerSocket();
             serverLoop();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
-        } finally {
+        }
+        finally {
             ready = false;
             if (serverSocket != null) {
                 try {
                     serverSocket.close();
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
     }
 
-    private void initializeServerSocket() throws Exception {
+    private void initializeServerSocket() throws Exception
+    {
         serverSocket = new ServerSocket(port);
         serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
     }
 
-    private void serverLoop() throws IOException {
+    private void serverLoop() throws IOException
+    {
         int poolSize = threaded ? MAX_THREADS : 1;
         ExecutorService threadExecutor = Executors.newFixedThreadPool(poolSize);
         while (!isStopped()) {
             Socket clientSocket;
             try {
                 clientSocket = clientSocket();
-            } catch(IOException ex) {
+            }
+            catch (IOException ex) {
                 if (isStopped()) {
                     break;
-                } else {
+                }
+                else {
                     throw ex;
                 }
             }
@@ -84,7 +94,8 @@ public class SmtpServer implements Runnable {
         ready = false;
     }
 
-    private Socket clientSocket() throws IOException {
+    private Socket clientSocket() throws IOException
+    {
         Socket socket = null;
         while (socket == null) {
             socket = accept();
@@ -92,55 +103,72 @@ public class SmtpServer implements Runnable {
         return socket;
     }
 
-    private Socket accept() throws IOException {
+    private Socket accept() throws IOException
+    {
         ready = true;
         return serverSocket.accept();
     }
 
-    public boolean isStopped() {
+    public boolean isStopped()
+    {
         return stopped;
     }
 
-    public synchronized void stop() {
+    public synchronized void stop()
+    {
         stopped = true;
         try {
             serverSocket.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new SmtpServerException(e);
         }
     }
 
-    public static class SmtpServerException extends RuntimeException {
-        public SmtpServerException(Throwable cause) {
+    public static class SmtpServerException extends RuntimeException
+    {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
+        public SmtpServerException(Throwable cause)
+        {
             super(cause);
         }
     }
 
-    public MailMessage[] getMessages() {
+    public MailMessage[] getMessages()
+    {
         return mailStore.getMessages();
     }
 
-    public MailMessage getMessage(int i) {
+    public MailMessage getMessage(int i)
+    {
         return mailStore.getMessage(i);
     }
 
-    public int getEmailCount() {
+    public int getEmailCount()
+    {
         return mailStore.getEmailCount();
     }
 
-    public void anticipateMessageCountFor(int messageCount, int ticks) {
+    public void anticipateMessageCountFor(int messageCount, int ticks)
+    {
         int tickdown = ticks;
         while (mailStore.getEmailCount() < messageCount && tickdown > 0) {
             tickdown--;
             try {
                 Thread.sleep(1);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 return;
             }
         }
     }
 
-    public boolean isReady() {
+    public boolean isReady()
+    {
         return ready;
     }
 
@@ -150,19 +178,23 @@ public class SmtpServer implements Runnable {
      *
      * @param threaded
      */
-    public void setThreaded(boolean threaded) {
+    public void setThreaded(boolean threaded)
+    {
         this.threaded = threaded;
     }
 
-    public void setMailStore(MailStore mailStore) {
+    public void setMailStore(MailStore mailStore)
+    {
         this.mailStore = mailStore;
     }
 
-    public void setPort(int port) {
+    public void setPort(int port)
+    {
         this.port = port;
     }
 
-    public void clearMessages() {
+    public void clearMessages()
+    {
         this.mailStore.clearMessages();
     }
 }

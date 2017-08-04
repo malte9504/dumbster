@@ -1,6 +1,7 @@
 package com.dumbster.smtp;
 
-public interface MailStore {
+public interface MailStore
+{
     public int getEmailCount();
 
     public void addMessage(MailMessage message);

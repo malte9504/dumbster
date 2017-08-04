@@ -4,7 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class ClientSession implements Runnable {
+public class ClientSession implements Runnable
+{
 
     private IOSource socket;
     private volatile MailStore mailStore;
@@ -17,7 +18,8 @@ public class ClientSession implements Runnable {
     private String lastHeaderName = null;
 
 
-    public ClientSession(IOSource socket, MailStore mailStore) {
+    public ClientSession(IOSource socket, MailStore mailStore)
+    {
         this.socket = socket;
         this.mailStore = mailStore;
         this.msg = new MailMessageImpl();
@@ -25,36 +27,45 @@ public class ClientSession implements Runnable {
         smtpResponse = request.execute(this.mailStore, msg);
     }
 
-    public void run() {
+    @Override
+    public void run()
+    {
         try {
             prepareSessionLoop();
             sessionLoop();
-        } catch (Exception ignored) {
-        } finally {
+        }
+        catch (Exception ignored) {
+        }
+        finally {
             try {
                 socket.close();
-            } catch (Exception ignored) {
+            }
+            catch (Exception ignored) {
             }
         }
     }
 
-    private void prepareSessionLoop() throws IOException {
+    private void prepareSessionLoop() throws IOException
+    {
         prepareOutput();
         prepareInput();
         sendResponse();
         updateSmtpState();
     }
 
-    private void prepareOutput() throws IOException {
+    private void prepareOutput() throws IOException
+    {
         out = socket.getOutputStream();
         out.flush();
     }
 
-    private void prepareInput() throws IOException {
+    private void prepareInput() throws IOException
+    {
         input = socket.getInputStream();
     }
 
-    private void sendResponse() {
+    private void sendResponse()
+    {
         if (smtpResponse.getCode() > 0) {
             int code = smtpResponse.getCode();
             String message = smtpResponse.getMessage();
@@ -63,11 +74,13 @@ public class ClientSession implements Runnable {
         }
     }
 
-    private void updateSmtpState() {
+    private void updateSmtpState()
+    {
         smtpState = smtpResponse.getNextState();
     }
 
-    private void sessionLoop() throws IOException {
+    private void sessionLoop() throws IOException
+    {
         while (smtpState != SmtpState.CONNECT && readNextLineReady()) {
             Request request = Request.createRequest(smtpState, line);
             smtpResponse = request.execute(mailStore, msg);
@@ -78,26 +91,31 @@ public class ClientSession implements Runnable {
         }
     }
 
-    private boolean readNextLineReady() throws IOException {
+    private boolean readNextLineReady() throws IOException
+    {
         readLine();
         return line != null;
     }
 
-    private void readLine() throws IOException {
+    private void readLine() throws IOException
+    {
         line = input.readLine();
     }
 
-    private void saveAndRefreshMessageIfComplete() {
+    private void saveAndRefreshMessageIfComplete()
+    {
         if (smtpState == SmtpState.QUIT) {
             mailStore.addMessage(msg);
             msg = new MailMessageImpl();
         }
     }
 
-    private void storeInputInMessage(Request request) {
+    private void storeInputInMessage(Request request)
+    {
         String params = request.getParams();
-        if (null == params)
+        if (null == params) {
             return;
+        }
 
         if (SmtpState.DATA_HDR.equals(smtpResponse.getNextState())) {
             addDataHeader(params);
@@ -110,23 +128,27 @@ public class ClientSession implements Runnable {
         }
     }
 
-    private void addDataHeader(String params) {
+    private void addDataHeader(String params)
+    {
         int headerNameEnd = params.indexOf(':');
         if (headerNameEnd > 0 && !whiteSpacedLineStart(params)) {
             lastHeaderName = params.substring(0, headerNameEnd).trim();
             String value = params.substring(headerNameEnd + 1).trim();
             msg.addHeader(lastHeaderName, value);
-        } else if (whiteSpacedLineStart(params) && lastHeaderName != null) {
+        }
+        else if (whiteSpacedLineStart(params) && lastHeaderName != null) {
             msg.appendHeader(lastHeaderName, params);
         }
     }
 
-    private boolean whiteSpacedLineStart(String s)  {
-        if (s == null || "".equals(s))
-          return false;
+    private boolean whiteSpacedLineStart(String s)
+    {
+        if (s == null || "".equals(s)) {
+            return false;
+        }
         char c = s.charAt(0);
         return c == 32 || c == 0x0b || c == '\n' ||
-                c == '\r' || c == '\t' || c == '\f';
+               c == '\r' || c == '\t' || c == '\f';
     }
 
 }

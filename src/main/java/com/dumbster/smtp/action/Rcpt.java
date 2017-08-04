@@ -5,19 +5,25 @@ import com.dumbster.smtp.MailStore;
 import com.dumbster.smtp.Response;
 import com.dumbster.smtp.SmtpState;
 
-public class Rcpt implements Action {
+public class Rcpt implements Action
+{
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "RCPT";
     }
 
-    public Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage) {
+    @Override
+    public Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage)
+    {
         if (SmtpState.RCPT == smtpState) {
             return new Response(250, "OK", smtpState);
-        } else {
+        }
+        else {
             return new Response(503,
-                    "Bad sequence of commands: " + this, smtpState);
+                "Bad sequence of commands: " + this,
+                smtpState);
         }
     }
 

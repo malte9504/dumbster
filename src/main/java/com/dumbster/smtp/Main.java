@@ -1,8 +1,10 @@
 package com.dumbster.smtp;
 
-public class Main {
+public class Main
+{
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         ServerOptions serverOptions = new ServerOptions(args);
         if (shouldShowHelp(args) || serverOptions.valid == false) {
             showHelp();
@@ -12,17 +14,21 @@ public class Main {
         SmtpServerFactory.startServer(serverOptions);
     }
 
-    private static boolean shouldShowHelp(String[] args) {
-        if (args.length == 0)
+    private static boolean shouldShowHelp(String[] args)
+    {
+        if (args.length == 0) {
             return false;
+        }
         for (String arg : args) {
-            if ("--help".equalsIgnoreCase(arg) || "-h".equalsIgnoreCase(arg))
+            if ("--help".equalsIgnoreCase(arg) || "-h".equalsIgnoreCase(arg)) {
                 return true;
+            }
         }
         return false;
     }
 
-    private static void showHelp() {
+    private static void showHelp()
+    {
         System.out.println();
         System.out.println("Dumbster Fake SMTP Server");
         System.out.println("usage: java -jar dumbster.jar [options] [port]");
