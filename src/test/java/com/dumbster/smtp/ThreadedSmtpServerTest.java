@@ -20,9 +20,7 @@ public class ThreadedSmtpServerTest extends AbstractSmtpServerTest
     @Override
     protected SmtpServer getSmtpServer()
     {
-        ServerOptions options = new ServerOptions();
-        options.port = SMTP_PORT;
-        options.threaded = true;
+        ServerOptions options = new ServerOptions().withRandomSmtpPort().threaded();
         return SmtpServerFactory.startServer(options);
     }
 

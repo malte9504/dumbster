@@ -52,7 +52,7 @@ public class RollingMailStore implements MailStore
 
         LOG.debug("Received message: " + message);
 
-        synchronized(receivedMail) {
+        synchronized (receivedMail) {
             if (!receivedMail.offer(message)) {
                 receivedMail.remove();
                 receivedMail.add(message);

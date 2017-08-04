@@ -17,7 +17,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.dumbster.smtp.MailMessage;
 import com.dumbster.smtp.MailMessageImpl;
@@ -70,7 +69,7 @@ public class EMLMailStoreTest
     }
 
     @Test
-    public void testNewMailStoreShouldLoadMessagesFromDirectory()
+    public void testNewMailStoreShouldLoadMessagesFromDirectory() throws IOException
     {
         givenMailStoreDirectoryExists();
 
@@ -221,22 +220,15 @@ public class EMLMailStoreTest
         }
     }
 
-    private void givenMailStoreDirectoryHasTwoMessages()
+    private void givenMailStoreDirectoryHasTwoMessages() throws IOException
     {
         givenMailStoreDirectoryIsEmpty();
-        try {
 
-            File file1 = new File(emlStoreDir, "1_message.eml");
-            file1.createNewFile();
+        File file1 = new File(emlStoreDir, "1_message.eml");
+        file1.createNewFile();
 
-            File file2 = new File(emlStoreDir, "2_message.eml");
-            file2.createNewFile();
-
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+        File file2 = new File(emlStoreDir, "2_message.eml");
+        file2.createNewFile();
     }
 
     private void whenAMessageIsAdded()

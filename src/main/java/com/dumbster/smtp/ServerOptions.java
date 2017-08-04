@@ -13,15 +13,22 @@
  */
 package com.dumbster.smtp;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
 import com.dumbster.smtp.mailstores.RollingMailStore;
+
+import java.io.IOException;
+import java.net.ServerSocket;
 
 public class ServerOptions
 {
-    public int port = SmtpServer.DEFAULT_SMTP_PORT;
-    public boolean threaded = true;
-    public MailStore mailStore = new RollingMailStore();
-    public boolean valid = true;
-    public int waitInResponse = 0;
+    public static final int SMTP_PORT = 25;
+    // options
+    private int port = SMTP_PORT;
+    private boolean threaded = true;
+    private MailStore mailStore = new RollingMailStore();
+    private int waitInResponse = 0;
 
     public ServerOptions()
     {}
@@ -36,29 +43,121 @@ public class ServerOptions
             if (argument.startsWith("--mailStore")) {
                 String[] values = argument.split("=");
                 if (values.length != 2) {
-                    this.valid = false;
-                    return;
+                    throw new IllegalArgumentException("--mailStore must have an argument");
                 }
+
+                String className = "com.dumbster.smtp.mailstores." + values[1];
                 try {
-                    this.mailStore = (MailStore) Class.forName("com.dumbster.smtp.mailstores." + values[1]).newInstance();
+                    this.withMailStore((MailStore) Class.forName(className).newInstance());
                 }
                 catch (ReflectiveOperationException e) {
-                    this.valid = false;
-                    return;
+                    throw new IllegalArgumentException("Could not instantiate mail store class: " + className, e);
                 }
             }
             else if (argument.startsWith("--threaded")) {
-                this.threaded = !argument.equalsIgnoreCase("--threaded=false");
+                if (argument.equalsIgnoreCase("--threaded=false")) {
+                    this.notThreaded();
+                }
+                else {
+                    this.threaded();
+                }
             }
             else {
                 try {
-                    this.port = Integer.parseInt(argument);
+                    this.withSmtpPort(Integer.parseInt(argument));
                 }
                 catch (NumberFormatException e) {
-                    this.valid = false;
-                    break;
+                    throw new IllegalArgumentException("'" + argument + "' is not a valid number");
                 }
             }
+        }
+    }
+
+    public ServerOptions threaded()
+    {
+        this.threaded = true;
+
+        return this;
+    }
+
+    public ServerOptions notThreaded()
+    {
+        this.threaded = false;
+
+        return this;
+    }
+
+    public ServerOptions withMailStore(MailStore mailStore)
+    {
+        requireNonNull(mailStore, "mailStore is null");
+        this.mailStore = mailStore;
+
+        return this;
+    }
+
+    public ServerOptions withDefaultSmtpPort()
+    {
+        this.port = SMTP_PORT;
+
+        return this;
+    }
+
+    public ServerOptions withRandomSmtpPort()
+    {
+        this.port = randomPort();
+
+        return this;
+    }
+
+    public ServerOptions withSmtpPort(int port)
+    {
+        if (port <= 0 || port > 65534) {
+            throw new IllegalArgumentException(format("Port %d must be > 0 and < 65535", port));
+        }
+
+        this.port = port;
+
+        return this;
+    }
+
+    public ServerOptions withWaitInResponseInMs(int waitInResponse)
+    {
+        if (waitInResponse < 0) {
+            throw new IllegalArgumentException("waitInResponse must be > 0");
+        }
+
+        this.waitInResponse = waitInResponse;
+
+        return this;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public boolean isThreaded()
+    {
+        return threaded;
+    }
+
+    public MailStore getMailStore()
+    {
+        return mailStore;
+    }
+
+    public int getWaitInResponse()
+    {
+        return waitInResponse;
+    }
+
+    private static int randomPort()
+    {
+        try (ServerSocket socket = new ServerSocket(0);) {
+            return socket.getLocalPort();
+        }
+        catch (IOException e) {
+            throw new IllegalStateException("Could not allocate a free port", e);
         }
     }
 }

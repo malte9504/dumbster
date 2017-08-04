@@ -27,6 +27,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Dummy SMTP server for testing purposes.
@@ -35,7 +37,6 @@ public class SmtpServer implements Runnable
 {
     private static final Logger LOG = LoggerFactory.getLogger(SmtpServer.class);
 
-    public static final int DEFAULT_SMTP_PORT = 25;
     // Timeout for socket accept. Do *not* set to 0 (call will block forever)
     private static final int SERVER_SOCKET_TIMEOUT = 10;
     private static final int MAX_THREADS = 10;
@@ -54,19 +55,20 @@ public class SmtpServer implements Runnable
     private final int waitInResponse;
 
 
-    public SmtpServer(final ServerOptions serverOptions) {
+    public SmtpServer(final ServerOptions serverOptions)
+    {
         requireNonNull(serverOptions, "serverOptions is null");
-        this.port = serverOptions.port;
-        this.mailStore = serverOptions.mailStore;
-        this.threaded = serverOptions.threaded;
-        this.waitInResponse = serverOptions.waitInResponse;
+        this.port = serverOptions.getPort();
+        this.mailStore = serverOptions.getMailStore();
+        this.threaded = serverOptions.isThreaded();
+        this.waitInResponse = serverOptions.getWaitInResponse();
     }
 
     @Override
     public void run()
     {
         serverThread = Thread.currentThread();
-        try(ServerSocket serverSocket = new ServerSocket(port)) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
             serverLoop(serverSocket);
         }
@@ -77,13 +79,34 @@ public class SmtpServer implements Runnable
 
     private void serverLoop(ServerSocket serverSocket) throws IOException
     {
-        int poolSize = threaded ? MAX_THREADS : 1;
-        ExecutorService threadExecutor = Executors.newFixedThreadPool(poolSize);
+        ExecutorService executorService;
+
+        final String serverThreadName = Thread.currentThread().getName();
+
+        ThreadFactory threadFactory = new ThreadFactory() {
+            private final AtomicInteger threadId = new AtomicInteger();
+
+            @Override
+            public Thread newThread(Runnable r)
+            {
+                Thread serviceThread = new Thread(r);
+                serviceThread.setDaemon(true);
+                serviceThread.setName(serverThreadName + "-" + threadId.getAndIncrement());
+                return serviceThread;
+            }
+        };
+
+        if (threaded) {
+            executorService = Executors.newFixedThreadPool(MAX_THREADS, threadFactory);
+        }
+        else {
+            executorService = Executors.newSingleThreadExecutor(threadFactory);
+        }
 
         this.running = true;
         this.stopped = false;
 
-        while (isRunning()) {
+        do {
             try {
                 Socket clientSocket = serverSocket.accept();
                 SocketWrapper source = new SocketWrapper(clientSocket);
@@ -96,7 +119,7 @@ public class SmtpServer implements Runnable
                     session = new TimedClientSession(source, mailStore, waitInResponse);
                 }
 
-                threadExecutor.execute(session);
+                executorService.execute(session);
             }
             catch (SocketTimeoutException e) {
                 LOG.trace("Tick ...");
@@ -109,7 +132,9 @@ public class SmtpServer implements Runnable
                 }
             }
         }
-        threadExecutor.shutdown();
+        while (isRunning());
+
+        executorService.shutdown();
         stopped = true;
     }
 

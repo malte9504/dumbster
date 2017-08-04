@@ -38,7 +38,7 @@ public class SmtpServerFactory
         SmtpServer server = wireUpServer(options);
         wrapInShutdownHook(server);
         startServerThread(server);
-        LOG.info(format("Dumbster SMTP Server started on port '%d'.", options.port));
+        LOG.info(format("Dumbster SMTP Server started on port '%d'.", options.getPort()));
         return server;
     }
 
@@ -69,14 +69,19 @@ public class SmtpServerFactory
 
     private static void startServerThread(SmtpServer server)
     {
-        new Thread(server).start();
+        Thread serverThread = new Thread(server);
+        serverThread.setName(format("Dumbster-SMTP-Server @ %d", server.getPort()));
+        serverThread.start();
+
         int timeout = 1000;
         while (!server.isRunning()) {
             try {
                 Thread.sleep(1);
-                timeout--;
-                if (timeout < 1) {
-                    throw new IllegalStateException("Server could not be started.");
+                if (timeout > 0) {
+                    timeout--;
+                    if (timeout < 1) {
+                        throw new IllegalStateException("Server could not be started.");
+                    }
                 }
             }
             catch (InterruptedException e) {

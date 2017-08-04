@@ -15,13 +15,10 @@ package com.dumbster.smtp;
 
 public class SmtpServerTest extends AbstractSmtpServerTest
 {
-    private static final int SMTP_PORT = 1081;
-
     @Override
     protected SmtpServer getSmtpServer()
     {
-        ServerOptions options = new ServerOptions();
-        options.port = SMTP_PORT;
+        ServerOptions options = new ServerOptions().withRandomSmtpPort().notThreaded();
         return SmtpServerFactory.startServer(options);
     }
 }

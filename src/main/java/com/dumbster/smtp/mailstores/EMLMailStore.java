@@ -56,7 +56,7 @@ public class EMLMailStore implements MailStore
      */
     private void checkInitialized()
     {
-        synchronized(this) {
+        synchronized (this) {
             if (!initialized.getAndSet(true)) {
                 if (!directory.exists()) {
                     LOG.debug(format("Creating directory '%s'", directory.getAbsolutePath()));
@@ -107,7 +107,7 @@ public class EMLMailStore implements MailStore
     public int getEmailCount()
     {
         checkInitialized();
-        synchronized(this) {
+        synchronized (this) {
             return count;
         }
     }
@@ -123,7 +123,7 @@ public class EMLMailStore implements MailStore
         checkInitialized();
 
         File file;
-        synchronized(this) {
+        synchronized (this) {
             count++;
             String filename = getFilename(message, count);
             file = new File(directory, filename);
@@ -201,8 +201,8 @@ public class EMLMailStore implements MailStore
     @Override
     public void clearMessages()
     {
-        synchronized(this) {
-            File [] files = this.directory.listFiles(new EMLFilenameFilter());
+        synchronized (this) {
+            File[] files = this.directory.listFiles(new EMLFilenameFilter());
             if (files != null) {
                 for (File file : files) {
                     if (!file.delete()) {
@@ -225,7 +225,7 @@ public class EMLMailStore implements MailStore
     public void setDirectory(File directory)
     {
         requireNonNull(directory, "directory is null");
-        synchronized(this) {
+        synchronized (this) {
             this.directory = directory;
         }
     }

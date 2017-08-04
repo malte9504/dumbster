@@ -18,13 +18,19 @@ public class Main
 
     public static void main(String[] args)
     {
-        ServerOptions serverOptions = new ServerOptions(args);
-        if (shouldShowHelp(args) || serverOptions.valid == false) {
+        if (shouldShowHelp(args)) {
             showHelp();
-            System.exit(1);
+            return;
         }
-
-        SmtpServerFactory.startServer(serverOptions);
+        try {
+            ServerOptions serverOptions = new ServerOptions(args);
+            SmtpServerFactory.startServer(serverOptions);
+        }
+        catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+            showHelp();
+            return;
+        }
     }
 
     private static boolean shouldShowHelp(String[] args)

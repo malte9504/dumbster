@@ -50,8 +50,9 @@ public class ClientSession implements Runnable
     {
         do {
             try {
-            prepareSessionLoop();
-            sessionLoop();
+                prepareSessionLoop();
+                sessionLoop();
+                running = false;
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -60,7 +61,8 @@ public class ClientSession implements Runnable
             catch (IOException e) {
                 LOG.warn("Caught IO Exception", e);
             }
-        } while(running);
+        }
+        while (running);
 
         try {
             socket.close();
