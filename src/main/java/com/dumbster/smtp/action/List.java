@@ -22,14 +22,14 @@ import com.dumbster.smtp.SmtpState;
 public class List implements Action
 {
 
-    private Integer messageIndex = null;
+    //private Integer messageIndex = null;
 
     public List(String params)
     {
         try {
             Integer messageIndex = Integer.valueOf(params);
             if (messageIndex > -1) {
-                this.messageIndex = messageIndex;
+                //this.messageIndex = messageIndex;
             }
         }
         catch (NumberFormatException ignored) {
