@@ -18,7 +18,7 @@ public class MailAddress
     MailAddress(String raw) throws Exception
     {
         final Matcher matcher = mailAddressPattern.matcher(raw);
-        if(!matcher.matches()) 
+        if(!matcher.matches())
         {
             throw new Exception("No valid mail!");
         }
