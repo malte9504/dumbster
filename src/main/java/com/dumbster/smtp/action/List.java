@@ -45,7 +45,8 @@ public class List implements Action
     @Override
     public Response response(SmtpState smtpState, MailStore mailStore, MailMessage currentMessage)
     {
-
+        return new Response(252, "Not supported", smtpState);
+        /*
         StringBuffer result = new StringBuffer();
         if (messageIndex != null && messageIndex < mailStore.getEmailCount()) {
             result.append("\n-------------------------------------------\n");
@@ -55,5 +56,6 @@ public class List implements Action
         result.append(mailStore.getEmailCount());
         result.append(" message(s).");
         return new Response(250, result.toString(), SmtpState.GREET);
+        */
     }
 }

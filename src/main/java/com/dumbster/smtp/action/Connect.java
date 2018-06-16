@@ -32,7 +32,7 @@ public class Connect implements Action
     {
         if (SmtpState.CONNECT == smtpState) {
             return new Response(220,
-                "localhost Dumbster SMTP service ready",
+                "SMTP service ready",
                 SmtpState.GREET);
         }
         else {

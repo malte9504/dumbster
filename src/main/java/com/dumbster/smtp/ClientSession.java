@@ -40,7 +40,7 @@ public class ClientSession implements Runnable
     {
         this.socket = socket;
         this.mailStore = mailStore;
-        this.msg = new MailMessageImpl();
+        this.msg = new AnonymisedMailMessageImpl();
         Request request = Request.initialRequest();
         smtpResponse = request.execute(this.mailStore, msg);
     }
