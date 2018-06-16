@@ -26,14 +26,14 @@ public class AnonymisedMailAddress extends MailAddress
     }
     AnonymisedMailAddress(String localPart, String globalPart)
     {
-        super(anonymise(localPart),globalPart);
+        super(anonymize(localPart),globalPart);
     }
     @Override
     protected String convertLocalPart(Matcher m) {
-        return anonymise(m.group(1));
+        return anonymize(m.group(1));
     }
 
-    private static String anonymise(String input)
+    protected static String anonymize(String input)
     {
         String res = sha1(input);
         if(res == null)
