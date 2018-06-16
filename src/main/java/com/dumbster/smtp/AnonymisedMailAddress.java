@@ -2,6 +2,7 @@ package com.dumbster.smtp;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.regex.Matcher;
 
 public class AnonymisedMailAddress extends MailAddress
 {
@@ -13,6 +14,10 @@ public class AnonymisedMailAddress extends MailAddress
     {
         super(anonymise(localPart),globalPart);
     }
+    @Override
+    protected String convertLocalPart(Matcher m) {
+        return anonymise(m.group(1));
+    }
 
     private static String anonymise(String input)
     {
@@ -23,7 +28,7 @@ public class AnonymisedMailAddress extends MailAddress
         }
         else
         {
-            res = res.substring(0, 6);
+            res = res.substring(0, 7);
         }
         return res;
     }
