@@ -16,11 +16,16 @@
  */
 package com.dumbster.smtp;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Container for a anonymised SMTP message - headers stripped and message body removed.
  */
 public class AnonymisedMailMessageImpl extends MailMessageImpl
 {
+
+    private final Logger LOG = LoggerFactory.getLogger(AnonymisedMailMessageImpl.class);
     private MailAddress From;
     private MailAddress To;
     private String Date;
@@ -41,18 +46,15 @@ public class AnonymisedMailMessageImpl extends MailMessageImpl
     public void addHeader(String name, String value)
     {
         try{
-            switch(name)
-            {
-                case("From"):               From        = new AnonymisedMailAddress(value); break;
-                case("To"):                 To          = new AnonymisedMailAddress(value); break;
-                case("Date"):               Date        = value;                            break;
-                case("X-MS-Has-Attach"): hasAttachments = value.contains("yes");            break;
-                default:                                                                    break;
-            }
+                 if(name.startsWith("From")){            From    = new AnonymisedMailAddress(value); }
+            else if(name.startsWith("To")){              To      = new AnonymisedMailAddress(value); }
+            else if(name.startsWith("Date")){            Date    = value; }
+            else if(name.startsWith("X-MS-Has-Attach")){ hasAttachments = value.contains("yes"); }
+            else { }
         }
         catch (Exception e)
         {
-            /* todo: log it */
+            LOG.warn("Error parsing mail address: ",e);
         }
     }
 
@@ -67,9 +69,16 @@ public class AnonymisedMailMessageImpl extends MailMessageImpl
     @Override
     public String toString()
     {
-        return  this.From.toString()             + csvSeparator +
-                this.To.toString()               + csvSeparator +
-                this.Date                        + csvSeparator +
-                this.hasAttachments.toString()   + lineSeparator;
+        try {
+            return this.From.toString() + csvSeparator +
+                    this.To.toString() + csvSeparator +
+                    this.Date + csvSeparator +
+                    this.hasAttachments.toString() + lineSeparator;
+        }
+        catch (NullPointerException e)
+        {
+            LOG.warn("Incomplete Mail:",e);
+            return "";
+        }
     }
 }

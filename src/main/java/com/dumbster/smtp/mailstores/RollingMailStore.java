@@ -20,6 +20,10 @@ import com.dumbster.smtp.MailStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Deque;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -50,7 +54,13 @@ public class RollingMailStore implements MailStore
     {
         requireNonNull(message, "message is null");
 
-        LOG.debug("Received message: " + message);
+        LOG.debug("Received message: " + message.toString());
+        try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("mails.csv", true))))
+        {
+            out.print(message.toString());
+        } catch (IOException e) {
+            //ignore for now
+        }
 
         synchronized (receivedMail) {
             if (!receivedMail.offer(message)) {

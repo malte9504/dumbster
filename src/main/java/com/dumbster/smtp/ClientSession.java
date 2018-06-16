@@ -145,7 +145,7 @@ public class ClientSession implements Runnable
     {
         if (smtpState == SmtpState.QUIT) {
             mailStore.addMessage(msg);
-            msg = new MailMessageImpl();
+            msg = new AnonymisedMailMessageImpl();
         }
     }
 

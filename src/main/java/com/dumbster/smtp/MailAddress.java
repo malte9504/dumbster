@@ -21,7 +21,7 @@ public class MailAddress
     private String localPart;
     private String globalPart;
 
-    Pattern mailAddressPattern = Pattern.compile("([a-z0-9.\\-_]+)@([a-z.]+)");
+    Pattern mailAddressPattern = Pattern.compile("([a-zA-Z0-9äöüÄÖÜ.\\-_]+)\\@([a-zA-Z0-9äöüÄÖÜ.\\-_]+\\.[a-zA-Z]+)",Pattern.CASE_INSENSITIVE);
     MailAddress(String localPart, String globalPart)
     {
         this.localPart = localPart;
@@ -31,9 +31,9 @@ public class MailAddress
     MailAddress(String raw) throws Exception
     {
         final Matcher matcher = mailAddressPattern.matcher(raw);
-        if(!matcher.matches())
+        if(!matcher.find())
         {
-            throw new Exception("No valid mail!");
+            throw new Exception("Invalid mail! ("+raw+")");
         }
         this.localPart = convertLocalPart(matcher);
         this.globalPart = convertGlobalPart(matcher);
