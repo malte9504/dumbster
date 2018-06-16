@@ -47,6 +47,7 @@ public class AnonymisedMailMessageImpl extends MailMessageImpl
                 case("To"):                 To          = new AnonymisedMailAddress(value); break;
                 case("Date"):               Date        = value;                            break;
                 case("X-MS-Has-Attach"): hasAttachments = value.contains("yes");            break;
+                default:                                                                    break;
             }
         }
         catch (Exception e)

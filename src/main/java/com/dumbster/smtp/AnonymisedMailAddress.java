@@ -1,5 +1,6 @@
 package com.dumbster.smtp;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
@@ -43,7 +44,7 @@ public class AnonymisedMailAddress extends MailAddress
         {
             return null;
         }
-        byte[] result = digest.digest(input.getBytes());
+        byte[] result = digest.digest(input.getBytes(StandardCharsets.ISO_8859_1));
         StringBuffer buffer = new StringBuffer();
         for (byte cur: result) 
         {
