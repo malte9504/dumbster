@@ -18,7 +18,10 @@ public class MailAddress
     MailAddress(String raw) throws Exception
     {
         final Matcher matcher = mailAddressPattern.matcher(raw);
-        if(!matcher.matches()) throw new Exception("No valid mail!");
+        if(!matcher.matches()) 
+        {
+            throw new Exception("No valid mail!");
+        }
         this.localPart = convertLocalPart(matcher);
         this.globalPart = convertGlobalPart(matcher);
     }
@@ -26,7 +29,7 @@ public class MailAddress
     {
         return m.group(1);
     }
-    
+
     protected String convertGlobalPart(Matcher m)
     {
         return m.group(2);

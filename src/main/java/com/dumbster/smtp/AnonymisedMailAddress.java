@@ -46,11 +46,11 @@ public class AnonymisedMailAddress extends MailAddress
         }
         byte[] result = digest.digest(input.getBytes(StandardCharsets.ISO_8859_1));
         StringBuffer buffer = new StringBuffer();
-        for (byte cur: result) 
+        for (byte cur: result)
         {
             buffer.append(Integer.toString((cur & 0xff) + 0x100, 16).substring(1));
         }
-         
+
         return buffer.toString();
     }
 }
